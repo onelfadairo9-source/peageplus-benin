@@ -2,10 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { communes, postes, troncons, tarifs, trajets } from "../../../lib/db";
 import { estAdminValide, tokenDepuisRequete } from "../../../lib/auth";
 
-function jourFCFA(dateISO: string) {
-  return dateISO.slice(0, 10);
-}
-
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!estAdminValide(tokenDepuisRequete(req))) {
     return res.status(401).json({ message: "Non authentifié." });
@@ -22,34 +18,30 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     .filter((t) => t.paidAt?.slice(0, 10) === aujourdHui)
     .reduce((sum, t) => sum + t.montantFCFA, 0);
 
-  // --- Revenu des 7 derniers jours ---
-  const revenuParJour: { date: string; revenu: number; trajets: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
+  // Revenu des 7 derniers jours
+  const revenuParJour = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - i);
-    const jour = d.toISOString().slice(0, 10);
-    const trajetsDuJour = trajetsPayes.filter((t) => t.paidAt && jourFCFA(t.paidAt) === jour);
-    revenuParJour.push({
-      date: jour,
-      revenu: trajetsDuJour.reduce((sum, t) => sum + t.montantFCFA, 0),
-      trajets: trajetsDuJour.length,
-    });
-  }
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    const jourtrajets = trajetsPayes.filter((t) => t.paidAt?.slice(0, 10) === dateStr);
+    return {
+      date: dateStr,
+      revenu: jourtrajets.reduce((s, t) => s + t.montantFCFA, 0),
+      trajets: jourtrajets.length,
+    };
+  });
 
-  // --- Revenu par poste (postes directs) ---
-  const revenuParPoste = postes
-    .map((p) => {
-      const trajetsPoste = trajetsPayes.filter((t) => t.posteId === p.id);
-      return {
-        nom: p.nom,
-        revenu: trajetsPoste.reduce((sum, t) => sum + t.montantFCFA, 0),
-        trajets: trajetsPoste.length,
-      };
-    })
-    .filter((p) => p.trajets > 0)
-    .sort((a, b) => b.revenu - a.revenu);
+  // Revenu par poste (mode direct)
+  const revenuParPoste = postes.map((p) => {
+    const pts = trajetsPayes.filter((t) => t.posteId === p.id);
+    return {
+      nom: p.nom,
+      revenu: pts.reduce((s, t) => s + t.montantFCFA, 0),
+      trajets: pts.length,
+    };
+  }).filter((p) => p.trajets > 0);
 
-  // --- Répartition par mode ---
+  // Répartition par mode
   const parMode = [
     {
       mode: "Prédéfini",
@@ -63,10 +55,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     },
   ];
 
-  // --- Répartition par catégorie de véhicule ---
+  // Répartition par catégorie de véhicule
   const parCategorie = [
-    { categorie: "Léger", trajets: trajetsPayes.filter((t) => t.categorieVehicule === "leger").length },
-    { categorie: "Lourd", trajets: trajetsPayes.filter((t) => t.categorieVehicule === "lourd").length },
+    { categorie: "Véhicule léger", trajets: trajetsPayes.filter((t) => t.categorieVehicule === "leger").length },
+    { categorie: "Poids lourd", trajets: trajetsPayes.filter((t) => t.categorieVehicule === "lourd").length },
   ];
 
   return res.status(200).json({

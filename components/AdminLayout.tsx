@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
+import Image from "next/image";
 
 interface Props {
   title: string;
@@ -28,16 +29,42 @@ export default function AdminLayout({ title, children }: Props) {
       <Head>
         <title>{title} — Admin PéagePlus</title>
       </Head>
-      <div className="barrier-stripe" />
+
+      {/* Bande drapeau béninois */}
+      <div style={{ height: "7px", display: "flex" }}>
+        <div style={{ flex: 1, background: "var(--drapeau-vert)" }} />
+        <div style={{ flex: 1, background: "var(--drapeau-jaune)" }} />
+        <div style={{ flex: 1, background: "var(--drapeau-rouge)" }} />
+      </div>
+
       <header className="site-header">
         <div className="header-inner">
           <Link href="/admin" className="brand">
-            <span className="brand-mark">P+</span>
+            <Image
+              src="/armoiries-benin.png"
+              alt="Armoiries du Bénin"
+              width={36}
+              height={34}
+              style={{ objectFit: "contain" }}
+              priority
+            />
             PéagePlus Admin
           </Link>
           <nav className="header-nav">
             <Link href="/">← Site public</Link>
-            <button onClick={deconnexion} className="btn btn-outline" style={{ background: "transparent", color: "#fff", borderColor: "rgba(255,255,255,0.4)", padding: "9px 16px" }}>
+            <button
+              onClick={deconnexion}
+              style={{
+                background: "transparent",
+                color: "#fff",
+                border: "1.5px solid rgba(255,255,255,0.4)",
+                padding: "9px 16px",
+                borderRadius: "999px",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
               Déconnexion
             </button>
           </nav>
@@ -65,7 +92,17 @@ export default function AdminLayout({ title, children }: Props) {
         </div>
       </main>
 
-      <footer className="site-footer">PéagePlus Bénin — Espace administrateur</footer>
+      <footer className="site-footer">
+        <div style={{ height: "5px", display: "flex", marginBottom: "16px" }}>
+          <div style={{ flex: 1, background: "var(--drapeau-vert)" }} />
+          <div style={{ flex: 1, background: "var(--drapeau-jaune)" }} />
+          <div style={{ flex: 1, background: "var(--drapeau-rouge)" }} />
+        </div>
+        PéagePlus Bénin — Espace administrateur ·{" "}
+        <a href="tel:0151485451" style={{ color: "var(--drapeau-jaune)", fontWeight: 700 }}>
+          0151485451
+        </a>
+      </footer>
     </div>
   );
 }
